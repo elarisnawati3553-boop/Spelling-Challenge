@@ -1,0 +1,174 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spelling Challenge</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:"Trebuchet MS",Arial,sans-serif;background:linear-gradient(135deg,#dff5ff,#fff0df);color:#304568;min-height:100vh;text-align:center}
+header{padding:25px 12px 10px}
+h1{font-size:clamp(32px,7vw,48px);color:#426ba5;margin:8px}
+.tagline{font-weight:bold;letter-spacing:2px;color:#e69b52}
+main{max-width:650px;margin:15px auto;padding:12px}
+.card{background:white;border-radius:25px;padding:25px 18px;box-shadow:0 7px 0 #cbdfe9}
+.stats{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:15px}
+.stat{background:white;padding:10px 17px;border-radius:25px;font-weight:bold}
+.progress{height:12px;background:#e4eaf0;border-radius:20px;margin:18px 0;overflow:hidden}
+.bar{height:100%;width:0;background:#63c99b;transition:.3s}
+.picture{font-size:100px;margin:12px}
+h2{font-size:26px}
+p{line-height:1.6}
+button{border:0;border-radius:13px;padding:14px 21px;margin:7px;background:#568fd0;color:white;font-size:16px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.5}
+.green{background:#55b98b}
+.orange{background:#efa451}
+input{width:min(90%,350px);padding:15px;border:3px solid #c9dfef;border-radius:12px;font-size:22px;text-align:center;font-weight:bold;outline:none}
+input:focus{border-color:#568fd0}
+.feedback{font-size:19px;font-weight:bold;min-height:35px;margin:15px}
+.small{font-size:13px;color:#8090a5}
+footer{padding:20px;color:#8191a3}
+</style>
+</head>
+<body>
+<header>
+<div style="font-size:38px">📚 ✏️ ⭐</div>
+<h1>SPELLING CHALLENGE</h1>
+<div class="tagline">LISTEN • SPELL • LEARN</div>
+</header>
+
+<main>
+<div class="stats">
+<div class="stat">⭐ Score: <span id="score">0</span></div>
+<div class="stat">📝 Question: <span id="number">0</span>/10</div>
+</div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+
+<section class="card" id="game">
+<div class="picture">🎒</div>
+<h2>Are You Ready?</h2>
+<p>Welcome to the Spelling Challenge!</p>
+<p>Look at the picture, listen carefully, and spell the word correctly.</p>
+<p>Complete all 10 questions and become a spelling superstar!</p>
+<button class="green" onclick="start()">START CHALLENGE</button>
+</section>
+</main>
+
+<footer>🌟 Do your best! You can do it! 🌟</footer>
+
+<script>
+const words=[
+{word:"leaf",picture:"🍃",hint:"A green part of a plant."},
+{word:"lemon",picture:"🍋",hint:"A yellow, sour fruit."},
+{word:"letter",picture:"✉️",hint:"A written message."},
+{word:"house",picture:"🏠",hint:"A place where people live."},
+{word:"hair",picture:"💇",hint:"It grows on your head."},
+{word:"hat",picture:"🎩",hint:"You wear it on your head."},
+{word:"helmet",picture:"⛑️",hint:"It protects your head."},
+{word:"ladder",picture:"🪜",hint:"You climb it to reach high places."},
+{word:"lion",picture:"🦁",hint:"A big wild cat."},
+{word:"hammer",picture:"🔨",hint:"A tool used to hit nails."}
+];
+
+let current=0;
+let score=0;
+let answered=false;
+
+function speak(text){
+if(!("speechSynthesis" in window)){
+alert("Audio is not supported in this browser.");
+return;
+}
+speechSynthesis.cancel();
+let voice=new SpeechSynthesisUtterance(text);
+voice.lang="en-US";
+voice.rate=0.78;
+speechSynthesis.speak(voice);
+}
+
+function start(){
+current=0;
+score=0;
+update();
+showQuestion();
+}
+
+function update(){
+document.getElementById("score").textContent=score;
+document.getElementById("number").textContent=Math.min(current+1,10);
+document.getElementById("bar").style.width=(current/10*100)+"%";
+}
+
+function showQuestion(){
+answered=false;
+let item=words[current];
+document.getElementById("game").innerHTML=`
+<p class="small">QUESTION ${current+1} OF 10</p>
+<div class="picture">${item.picture}</div>
+<h2>Listen and Spell!</h2>
+<p>${item.hint}</p>
+<button class="orange" onclick="playWord()">🔊 LISTEN TO THE WORD</button>
+<p><input id="answer" placeholder="Type your answer..." autocomplete="off" spellcheck="false"></p>
+<button class="green" onclick="checkAnswer()">CHECK ANSWER</button>
+<div class="feedback" id="feedback"></div>
+<p class="small">You can listen again as many times as you need.</p>
+`;
+document.getElementById("answer").addEventListener("keydown",e=>{
+if(e.key==="Enter")checkAnswer();
+});
+update();
+}
+
+function playWord(){
+speak(words[current].word);
+}
+
+function checkAnswer(){
+if(answered)return;
+let input=document.getElementById("answer");
+let answer=input.value.trim().toLowerCase();
+let feedback=document.getElementById("feedback");
+
+if(!answer){
+feedback.textContent="Please type your answer first!";
+feedback.style.color="#d58b35";
+return;
+}
+
+if(answer===words[current].word){
+answered=true;
+score+=10;
+feedback.textContent="🎉 Excellent! Correct spelling!";
+feedback.style.color="#259b70";
+document.querySelectorAll("#game button").forEach(b=>b.disabled=true);
+update();
+setTimeout(()=>{
+current++;
+if(current>=words.length)finish();
+else showQuestion();
+},1300);
+}else{
+feedback.textContent="💛 Try again! Listen carefully!";
+feedback.style.color="#d76b75";
+input.value="";
+input.focus();
+}
+}
+
+function finish(){
+document.getElementById("bar").style.width="100%";
+document.getElementById("number").textContent="10";
+document.getElementById("game").innerHTML=`
+<div class="picture">🏆🎉</div>
+<h2>Spelling Challenge Completed!</h2>
+<p>You have finished all 10 words!</p>
+<h2>Your Score: ${score}/100</h2>
+<p>${score===100?"Amazing! Perfect spelling!":"Great effort! Keep practising!"}</p>
+<button class="green" onclick="start()">PLAY AGAIN</button>
+<button class="orange" onclick="speak('Congratulations! You did a wonderful job!')">🔊 HEAR PRAISE</button>
+`;
+}
+</script>
+</body>
+</html>
